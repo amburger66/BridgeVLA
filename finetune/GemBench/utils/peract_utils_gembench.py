@@ -1,8 +1,7 @@
-#Adapted from https://github.com/NVlabs/RVT/blob/master/rvt/utils/peract_utils.py
+# Adapted from https://github.com/NVlabs/RVT/blob/master/rvt/utils/peract_utils.py
 from omegaconf import OmegaConf
 
 from bridgevla.models.peract_official import create_agent_our
-from peract_colab.arm.utils import stack_on_channel
 
 # Contants
 # TODO: Unclear about the best way to handle them
@@ -55,13 +54,10 @@ def get_official_peract(
     return agent
 
 
-
-
 def _preprocess_inputs_gembench(replay_sample, cameras):
     obs, pcds = [], []
     for n in cameras:
-    
-       
+
         rgb = replay_sample[n]["rgb"]
         pcd = replay_sample[n]["pcd"]
 
@@ -73,3 +69,18 @@ def _preprocess_inputs_gembench(replay_sample, cameras):
         pcds.append(pcd)  # only pointcloud
     return obs, pcds
 
+
+# TODO: from peract_utils_rlbench.py
+def _preprocess_inputs(replay_sample, cameras):
+    obs, pcds = [], []
+    for n in cameras:
+        rgb = stack_on_channel(replay_sample["%s_rgb" % n])
+        pcd = stack_on_channel(replay_sample["%s_point_cloud" % n])
+
+        rgb = _norm_rgb(rgb)
+
+        obs.append(
+            [rgb, pcd]
+        )  # obs contains both rgb and pointcloud (used in ARM for other baselines)
+        pcds.append(pcd)  # only pointcloud
+    return obs, pcds

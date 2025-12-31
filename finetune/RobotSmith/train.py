@@ -33,11 +33,11 @@ import wandb
 os.environ["BITSANDBYTES_NOWELCOME"] = "1"
 
 import bridgevla.config as exp_cfg_mod
-import bridgevla.models.bridgevla_agent as bridgevla_agent
+import bridgevla.models.bridgevla_agent_minimal as bridgevla_agent
 import bridgevla.mvt.config as mvt_cfg_mod
 
 from bridgevla.mvt.mvt import MVT
-from bridgevla.models.bridgevla_agent import print_loss_log
+from bridgevla.models.bridgevla_agent_minimal import print_loss_log
 from bridgevla.utils.rvt_utils import (
     get_num_feat,
 )
@@ -49,7 +49,7 @@ from utils.peract_utils_robotsmith import (
 import socket
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
-from gembench_dataset import Gembench_Dataset
+from task03_dataset import Dataset
 
 
 def find_free_port():
@@ -240,7 +240,7 @@ def setup_distributed(backend="nccl", port=None):
 
 
 def experiment(cmd_args):
-    # setup_distributed()
+    setup_distributed()
     world_size = int(os.environ["WORLD_SIZE"])
     rank = int(os.environ["RANK"])
     local_rank = int(os.environ["LOCAL_RANK"])
@@ -280,7 +280,7 @@ def experiment(cmd_args):
 
     log_dir = get_logdir(cmd_args, exp_cfg, dist)
     t_start = time.time()
-    train_dataset = Gembench_Dataset(
+    train_dataset = Dataset(
         data_folder,
         device=device_id,
         cameras=cmd_args.cameras,
@@ -377,7 +377,7 @@ def experiment(cmd_args):
                 entity="",
                 project="RobotSmith-BridgeVLA",
                 name=os.path.dirname(log_dir),
-                mode="disabled",
+                # mode="disabled",
             )
         else:
             wandb.init(
@@ -418,12 +418,14 @@ if __name__ == "__main__":
         "--mvt_cfg_path", type=str, default="../bridgevla/mvt/configs/rvt2.yaml"
     )
     parser.add_argument(
-        "--exp_cfg_path", type=str, default="configs/tooluse_config.yaml"
+        "--exp_cfg_path", type=str, default="configs/robotsmith_config.yaml"
     )
     parser.add_argument("--mvt_cfg_opts", type=str, default="")
     parser.add_argument("--exp_cfg_opts", type=str, default="")
     parser.add_argument("--exp_note", type=str, default="")
-    parser.add_argument("--log_dir", type=str, default="/data/BridgeVLA/logs")
+    parser.add_argument(
+        "--log_dir", type=str, default="/data/RobotSmith-BridgeVLA/logs"
+    )
     parser.add_argument(
         "--data_folder",
         type=str,
@@ -434,7 +436,11 @@ if __name__ == "__main__":
     parser.add_argument("--freeze_vision_tower", action="store_true")
     parser.add_argument("--load_pretrain", action="store_true")
     parser.add_argument("--lr", type=float, default=8e-5)
-    parser.add_argument("--pretrain_path", type=str, default=None)
+    parser.add_argument(
+        "--pretrain_path",
+        type=str,
+        default="/home/amli/research/BridgeVLA/pretrain/BridgeVLA_pretrain_checkpoints/checkpoints/pretrain",
+    )
     parser.add_argument(
         "--cameras",
         type=str,

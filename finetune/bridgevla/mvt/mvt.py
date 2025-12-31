@@ -322,21 +322,22 @@ class MVT(nn.Module):
             wpt_local=wpt_local,
             rot_x_y=rot_x_y,
         )
-        with torch.no_grad():
-            if self.training and (self.img_aug_2 != 0):
-                for x in img_feat:
-                    stdv = self.img_aug_2 * torch.rand(1, device=x.device)
-                    # values in [-stdv, stdv]
-                    noise = stdv * ((2 * torch.rand(*x.shape, device=x.device)) - 1)
-                    x = x + noise
-           
-            img = self.render(
-                pc=pc,
-                img_feat=img_feat,
-                img_aug=img_aug,
-                mvt1_or_mvt2=True,
-                dyn_cam_info=None,
-            )
+        with torch.jit.optimized_execution(False):
+            with torch.no_grad():
+                if self.training and (self.img_aug_2 != 0):
+                    for x in img_feat:
+                        stdv = self.img_aug_2 * torch.rand(1, device=x.device)
+                        # values in [-stdv, stdv]
+                        noise = stdv * ((2 * torch.rand(*x.shape, device=x.device)) - 1)
+                        x = x + noise
+            
+                img = self.render(
+                    pc=pc,
+                    img_feat=img_feat,
+                    img_aug=img_aug,
+                    mvt1_or_mvt2=True,
+                    dyn_cam_info=None,
+                )
         if self.training:
             wpt_local_stage_one = wpt_local  
             wpt_local_stage_one = wpt_local_stage_one.clone().detach()
@@ -391,49 +392,50 @@ class MVT(nn.Module):
             plt.show()
         # visualize_tensor(img[0,:,3:6], save_path="/PATH_TO_SAVE_DIR/debug.png")
         if self.stage_two:
-            with torch.no_grad():
-                # adding then noisy location for training
-                if self.training:
-                    # noise is added so that the wpt_local2 is not exactly at
-                    # the center of the pc
-                    wpt_local_stage_one_noisy = mvt_utils.add_uni_noi(
-                        wpt_local_stage_one.clone().detach(), 2 * self.st_wpt_loc_aug
-                    )
-                    pc, rev_trans = mvt_utils.trans_pc(
-                        pc, loc=wpt_local_stage_one_noisy, sca=self.st_sca
-                    )
-
-                    if self.st_wpt_loc_inp_no_noise:
-                        wpt_local2, _ = mvt_utils.trans_pc(
-                            wpt_local, loc=wpt_local_stage_one_noisy, sca=self.st_sca
+            with torch.jit.optimized_execution(False):
+                with torch.no_grad():
+                    # adding then noisy location for training
+                    if self.training:
+                        # noise is added so that the wpt_local2 is not exactly at
+                        # the center of the pc
+                        wpt_local_stage_one_noisy = mvt_utils.add_uni_noi(
+                            wpt_local_stage_one.clone().detach(), 2 * self.st_wpt_loc_aug
                         )
+                        pc, rev_trans = mvt_utils.trans_pc(
+                            pc, loc=wpt_local_stage_one_noisy, sca=self.st_sca
+                        )
+
+                        if self.st_wpt_loc_inp_no_noise:
+                            wpt_local2, _ = mvt_utils.trans_pc(
+                                wpt_local, loc=wpt_local_stage_one_noisy, sca=self.st_sca
+                            )
+                        else:
+                            wpt_local2, _ = mvt_utils.trans_pc(
+                                wpt_local, loc=wpt_local_stage_one, sca=self.st_sca
+                            )
+
                     else:
-                        wpt_local2, _ = mvt_utils.trans_pc(
-                            wpt_local, loc=wpt_local_stage_one, sca=self.st_sca
+                        # bs, 3
+                        wpt_local = self.get_wpt(
+                            out, y_q=None, mvt1_or_mvt2=True,
+                            dyn_cam_info=None,
                         )
+                        pc, rev_trans = mvt_utils.trans_pc(
+                            pc, loc=wpt_local, sca=self.st_sca
+                        )
+                        # bad name!
+                        wpt_local_stage_one_noisy = wpt_local
 
-                else:
-                    # bs, 3
-                    wpt_local = self.get_wpt(
-                        out, y_q=None, mvt1_or_mvt2=True,
+                        # must pass None to mvt2 while in eval
+                        wpt_local2 = None
+
+                    img = self.render(
+                        pc=pc,
+                        img_feat=img_feat,
+                        img_aug=img_aug,
+                        mvt1_or_mvt2=False,
                         dyn_cam_info=None,
                     )
-                    pc, rev_trans = mvt_utils.trans_pc(
-                        pc, loc=wpt_local, sca=self.st_sca
-                    )
-                    # bad name!
-                    wpt_local_stage_one_noisy = wpt_local
-
-                    # must pass None to mvt2 while in eval
-                    wpt_local2 = None
-
-                img = self.render(
-                    pc=pc,
-                    img_feat=img_feat,
-                    img_aug=img_aug,
-                    mvt1_or_mvt2=False,
-                    dyn_cam_info=None,
-                )
         
             out_mvt2 = self.mvt1(
                 img=img,
