@@ -8,7 +8,6 @@ import sys
 import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..."))
-import GemBench.utils.peract_utils_gembench as gembench_utils
 import RobotSmith.utils.peract_utils_robotsmith as robotsmith_utils
 import bridgevla.mvt.utils as mvt_utils
 import bridgevla.utils.rvt_utils as rvt_utils
@@ -586,7 +585,7 @@ class RVTAgent:
         action_grip = action_gripper_pose[:, -1].int()  # (b,)
         return_out = {}
 
-        obs, pcd = gembench_utils._preprocess_inputs_gembench(replay_sample, cameras)
+        obs, pcd = robotsmith_utils._preprocess_inputs_gembench(replay_sample, cameras)
 
         with torch.no_grad():
             pc, img_feat = rvt_utils.get_pc_img_feat(
@@ -794,7 +793,7 @@ class RVTAgent:
     ) -> ActResult:
         language_goal = observation["language_goal"]
         # TODO
-        obs, pcd = gembench_utils._preprocess_inputs(observation, self.cameras)
+        obs, pcd = robotsmith_utils._preprocess_inputs(observation, self.cameras)
         pc, img_feat = rvt_utils.get_pc_img_feat(
             obs,
             pcd,

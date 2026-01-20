@@ -1,8 +1,9 @@
-exp_id: ours_gembench
+exp_id: robotsmith_tools_12_13
 tasks: all
-bs: 2  # 4
+train_tools: [12, 13]
+bs: 2
 num_workers: 3
-epochs: 100
+epochs: 1000
 peract:
   lr: 8e-5
   transform_augmentation_xyz: [0.125, 0.125, 0.125]

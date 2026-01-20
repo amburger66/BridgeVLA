@@ -14,6 +14,7 @@ class Dataset(torch.utils.data.Dataset):
         self,
         data_path,
         device,
+        train_tools,
         cameras=["front", "left_shoulder", "right_shoulder", "wrist"],
         ep_per_task=1000,
     ):
@@ -23,7 +24,7 @@ class Dataset(torch.utils.data.Dataset):
         self.cameras = cameras
         time.sleep(5)
 
-        self.train_tools = [18]  # TODO: put this in config
+        self.train_tools = train_tools
         self.construct_dataset(ep_per_task)
 
     def construct_dataset(self, ep_per_task):
@@ -38,17 +39,23 @@ class Dataset(torch.utils.data.Dataset):
             print("Loading tool:", tool)
             tool_dir = os.path.join(self.data_path, str(tool))
 
-            for n_ep, ep in enumerate(os.listdir(tool_dir)):
-                if n_ep >= ep_per_task:
-                    break
-
+            num_episodes = 0
+            metric_sum = 0.0
+            for ep in sorted(os.listdir(tool_dir)):
                 assert ep.endswith(".npz")
                 episode = np.load(os.path.join(tool_dir, ep))
 
-                # Filter for successful episodes: mean dough height less than 0.03
+                # Filter for successful episodes
                 if episode["penalty_mean"] > 0.03:
                     print("Skipping episode:", ep)
                     continue
+
+                num_episodes += 1
+                if num_episodes >= ep_per_task:
+                    break
+
+                if "metric" in episode:
+                    metric_sum += episode["metric"]
 
                 pcd = episode["pcd"]
                 rgb = episode["rgb"]
@@ -78,6 +85,10 @@ class Dataset(torch.utils.data.Dataset):
                     sample["tasks"] = "task03_flatten"
                     self.train_data.append(copy.deepcopy(sample))
 
+            print("Loaded", num_episodes, "episodes for tool", tool)
+            metric_mean = metric_sum / num_episodes
+            print("Metric mean:", metric_mean)
+
     def __len__(self):
         return len(self.train_data)
 
@@ -94,9 +105,10 @@ if __name__ == "__main__":
         data_path="/home/amli/research/RobotSmith/task03_flatten_tools/episodes",
         device="cuda:0",
         ep_per_task=100,
+        train_tools=[9],
     )
 
-    print(len(dataset))
+    print("Dataset length:", len(dataset))
 
     for data in dataset:
         print(data.keys())

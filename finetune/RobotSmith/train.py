@@ -283,6 +283,7 @@ def experiment(cmd_args):
     train_dataset = Dataset(
         data_folder,
         device=device_id,
+        train_tools=exp_cfg.train_tools,
         cameras=cmd_args.cameras,
         ep_per_task=cmd_args.ep_per_task,
     )
@@ -371,13 +372,13 @@ def experiment(cmd_args):
 
     # Initialize Logging =>> W&B
     if dist.get_rank() == 0:
-        wandb.login(key="")
+        wandb.login()
         if cmd_args.debug:
             wandb.init(
                 entity="",
                 project="RobotSmith-BridgeVLA",
                 name=os.path.dirname(log_dir),
-                # mode="disabled",
+                mode="disabled",
             )
         else:
             wandb.init(
@@ -397,7 +398,7 @@ def experiment(cmd_args):
         )
         if rank == 0:
             wandb.log(out, step=i)
-        if dist.get_rank() == 0 and (i % 20 == 0 or i == end_epoch - 1):
+        if dist.get_rank() == 0 and (i % 100 == 0 or i == end_epoch - 1):
             # TODO: add logic to only save some models
             save_agent(agent, f"{log_dir}/model_{i}.pth", i)
             save_agent(agent, f"{log_dir}/model_last.pth", i)
@@ -429,7 +430,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--data_folder",
         type=str,
-        default="/home/amli/research/RobotSmith/task03_flatten_tools/episodes",
     )
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--ep_per_task", type=int, default=10000)  # use all data
@@ -439,7 +439,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--pretrain_path",
         type=str,
-        default="/home/amli/research/BridgeVLA/pretrain/BridgeVLA_pretrain_checkpoints/checkpoints/pretrain",
+        default="BridgeVLA_pretrain_checkpoints/checkpoints/pretrain",
     )
     parser.add_argument(
         "--cameras",

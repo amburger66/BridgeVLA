@@ -1,7 +1,4 @@
 # Adapted from https://github.com/NVlabs/RVT/blob/master/rvt/utils/peract_utils.py
-from omegaconf import OmegaConf
-
-from bridgevla.models.peract_official import create_agent_our
 
 # Contants
 CAMERAS = ["front", "left_shoulder", "right_shoulder", "wrist"]
@@ -26,31 +23,6 @@ NUM_LATENTS = 512  # PerceiverIO latents
 
 def _norm_rgb(x):
     return (x.float() / 255.0) * 2.0 - 1.0
-
-
-def get_official_peract(
-    cfg_path,
-    training,
-    device,
-    bs,
-):
-    """
-    Creates an official peract agent
-    :param cfg_path: path to the config file
-    :param training: whether to build the agent in training mode
-    :param device: device to build the agent on
-    :param bs: batch size, does not matter when we need a model for inference.
-    """
-    with open(cfg_path, "r") as f:
-        cfg = OmegaConf.load(f)
-
-    # we need to modify the batch size as in our case we specify batchsize per
-    # gpu
-    cfg.replay.batch_size = bs
-    agent = create_agent_our(cfg)
-    agent.build(training=training, device=device)
-
-    return agent
 
 
 def _preprocess_inputs_gembench(replay_sample, cameras):

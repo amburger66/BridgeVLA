@@ -4,15 +4,18 @@ from yacs.config import CfgNode as CN
 _C = CN()
 
 _C.agent = "our"
-_C.tasks = "insert_onto_square_peg,open_drawer,place_wine_at_rack_location,light_bulb_in"
+_C.tasks = (
+    "insert_onto_square_peg,open_drawer,place_wine_at_rack_location,light_bulb_in"
+)
 _C.exp_id = "def"
+_C.train_tools = []
 # bs per device, effective bs is scaled by num device
 _C.bs = 4
 _C.epochs = 100
 # number of dataloader workers, >= 0
 _C.num_workers = 0
 # 'transition_uniform' or 'task_uniform'
-_C.sample_distribution_mode = 'transition_uniform'
+_C.sample_distribution_mode = "transition_uniform"
 _C.train_iter = 16 * 10000
 _C.use_scheduler = True
 # arguments present in both peract and rvt
@@ -22,7 +25,7 @@ _C.peract.lambda_weight_l2 = 1e-6
 # lr should be thought on per sample basis
 # effective lr is multiplied by bs * num_devices
 _C.peract.lr = 2.5e-5
-_C.peract.optimizer_type =  "adam" # "lamb"
+_C.peract.optimizer_type = "adam"  # "lamb"
 _C.peract.add_rgc_loss = True
 _C.peract.num_rotation_classes = 72
 _C.peract.transform_augmentation = True
