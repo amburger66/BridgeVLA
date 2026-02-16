@@ -45,8 +45,8 @@ class Dataset(torch.utils.data.Dataset):
                 assert ep.endswith(".npz")
                 episode = np.load(os.path.join(tool_dir, ep))
 
-                # Filter for successful episodes
-                if episode["penalty_mean"] > 0.03:
+                # Filter for successful episodes: 0.8 is table height
+                if episode["penalty_mean"] > 0.03 + 0.8:
                     print("Skipping episode:", ep)
                     continue
 
@@ -102,10 +102,10 @@ class Dataset(torch.utils.data.Dataset):
 
 if __name__ == "__main__":
     dataset = Dataset(
-        data_path="/home/amli/research/RobotSmith/task03_flatten_tools/episodes",
+        data_path="/home/amli/research/RobotSmith/task03_flatten_tools/episodes_pcd",
         device="cuda:0",
         ep_per_task=100,
-        train_tools=[9],
+        train_tools=[8, 9, 14],
     )
 
     print("Dataset length:", len(dataset))
