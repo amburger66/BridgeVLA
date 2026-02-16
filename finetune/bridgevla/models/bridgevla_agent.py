@@ -997,7 +997,7 @@ class RVTAgent:
 
     @torch.no_grad()
     def act(
-        self, step: int, observation: dict,visualize=False,visualize_save_dir="", return_gembench_action=False,
+        self, step: int, observation: dict,visualize=False,visualize_save_dir="", return_gembench_action=False, return_robotsmith_action=False,
     ) -> ActResult:
         language_goal =observation["language_goal"]
         obs, pcd = rlbench_utils._preprocess_inputs(observation, self.cameras)
@@ -1080,6 +1080,8 @@ class RVTAgent:
                         pred_grip[0].cpu().numpy(),
                     ], -1
                 )
+            return continuous_action
+        elif return_robotsmith_action:
             return continuous_action
         else:
             return ActResult(continuous_action)
